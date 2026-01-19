@@ -556,10 +556,11 @@
             }
 
             setMask(maskData) {
-                for (let i = 0; i < maskData.length; i++) {
-                    this.isMask[i] = maskData[i] > 127 ? 1 : 0;
-                    if (this.isMask[i]) {
-                        this.levelSet[i] = 0;
+                for (let i = 0; i < maskData.length; i += 4) {
+                    const pixelIndex = i / 4;
+                    this.isMask[pixelIndex] = maskData[i] > 127 ? 1 : 0;
+                    if (this.isMask[pixelIndex]) {
+                        this.levelSet[pixelIndex] = 0;
                     }
                 }
             }
