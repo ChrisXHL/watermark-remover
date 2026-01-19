@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能去水印工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area svg {
+            width: 50px;
+            height: 50px;
+            fill: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .upload-area p {
+            color: #666;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            accent-color: #667eea;
+        }
+
+        .control-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f4ff;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .workspace {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            background: #f0f4ff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .canvas-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+        }
+
+        .canvas-wrapper h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        canvas {
+            width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+
+        .processing-info {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .processing-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ddd;
+        }
+
+        .status-indicator.active {
+            background: #667eea;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .tool-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .tool-option {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tool-option:hover {
+            border-color: #667eea;
+        }
+
+        .tool-option.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .tool-option svg {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 5px;
+            fill: #667eea;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .instructions h4 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .canvas-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🖼️ 智能去水印工具</h1>
+            <p>AI驱动的智能图像修复和水印去除工具</p>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar">
+                <h2>📤 上传图片</h2>
+                <div class="upload-area" id="uploadArea">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                    </svg>
+                    <p>点击或拖拽图片到这里</p>
+                    <p style="font-size: 0.8em; color: #999;">支持 JPG, PNG, WebP</p>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                </div>
+
+                <div class="controls">
+                    <h2>⚙️ 处理选项</h2>
+                    
+                    <div class="tool-options">
+                        <div class="tool-option active" data-tool="auto">
+                            <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM9.5 12.5l2.5 3.01L14.5 12l4 5H5l4.5-4.5z"/></svg>
+                            <div>自动</div>
+                        </div>
+                        <div class="tool-option" data-tool="manual">
+                            <svg viewBox="0 0 24 24"><path d="M3 5h2V3c-1.1 0-2 .9-2 2zm0 8h2v-2H3v2zm4 8h2v-2H7v2zM3 9h2V7H3v2zm10-6h-2v2h2V3zm6 0v2h2c0-1.1-.9-2-2-2zM5 21v-2H3c0 1.1.9 2 2 2zm-2-4h2v-2H3v2zM9 3H7v2h2V3zm2 18h2v-2h-2v2zm8-8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2zm0-12h2V7h-2v2zm0 8h2v-2h-2v2zm-4 4h2v-2h-2v2zm0-16h2V3h-2v2zM7 17h10V7H7v10zm2-8h6v6H9V9z"/></svg>
+                            <div>手动</div>
+                        </div>
+                        <div class="tool-option" data-tool="denoise">
+                            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 20H4v-4h4v4zm0-6H4v-4h4v4zm0-6H4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4z"/></svg>
+                            <div>去噪</div>
+                        </div>
+                    </div>
+
+                    <div class="control-group" id="sensitivityGroup">
+                        <label>水印敏感度: <span id="sensitivityValue">50</span></label>
+                        <input type="range" id="sensitivity" min="10" max="90" value="50">
+                    </div>
+
+                    <div class="control-group" id="brushSizeGroup" style="display: none;">
+                        <label>画笔大小: <span id="brushSizeValue">20</span></label>
+                        <input type="range" id="brushSize" min="5" max="50" value="20">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="processBtn" disabled>✨ 智能处理</button>
+                <button class="btn btn-secondary" id="downloadBtn" disabled>📥 下载结果</button>
+                <button class="btn btn-secondary" id="resetBtn">🔄 重置</button>
+            </aside>
+
+            <main class="workspace">
+                <div class="tabs">
+                    <button class="tab active" data-tab="original">原始图片</button>
+                    <button class="tab" data-tab="result">处理结果</button>
+                    <button class="tab" data-tab="compare">对比视图</button>
+                </div>
+
+                <div class="instructions" id="instructions">
+                    <h4>📝 使用说明</h4>
+                    <ul id="instructionList">
+                        <li>上传图片后选择处理模式</li>
+                        <li>自动模式会智能检测水印区域</li>
+                        <li>手动模式可以框选需要去除的区域</li>
+                    </ul>
+                </div>
+
+                <div class="canvas-container">
+                    <div class="canvas-wrapper">
+                        <h3>原始图片</h3>
+                        <canvas id="originalCanvas"></canvas>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <h3>处理结果</h3>
+                        <canvas id="resultCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="processing-info" id="processingInfo" style="display: none;">
+                    <h3>处理信息</h3>
+                    <div class="status">
+                        <div class="status-indicator" id="statusIndicator"></div>
+                        <span id="statusText">准备就绪</span>
+                    </div>
+                    <p>图片尺寸: <span id="imageSize">-</span></p>
+                    <p>处理时间: <span id="processTime">-</span></p>
+                    <p>检测到的水印区域: <span id="watermarkAreas">-</span></p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        class WatermarkRemover {
+            constructor() {
+                this.originalImage = null;
+                this.processedImage = null;
+                this.currentTool = 'auto';
+                this.brushSize = 20;
+                this.sensitivity = 50;
+                this.manualRegions = [];
+                this.isDrawing = false;
+                this.startX = 0;
+                this.startY = 0;
+
+                this.initElements();
+                this.bindEvents();
+            }
+
+            initElements() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.fileInput = document.getElementById('fileInput');
+                this.originalCanvas = document.getElementById('originalCanvas');
+                this.resultCanvas = document.getElementById('resultCanvas');
+                this.originalCtx = this.originalCanvas.getContext('2d');
+                this.resultCtx = this.resultCanvas.getContext('2d');
+                this.processBtn = document.getElementById('processBtn');
+                this.downloadBtn = document.getElementById('downloadBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.sensitivitySlider = document.getElementById('sensitivity');
+                this.brushSizeSlider = document.getElementById('brushSize');
+                this.processingInfo = document.getElementById('processingInfo');
+            }
+
+            bindEvents() {
+                this.uploadArea.addEventListener('click', () => this.fileInput.click());
+                this.uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
+                this.uploadArea.addEventListener('drop', (e) => this.handleDrop(e));
+                this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+
+                document.querySelectorAll('.tool-option').forEach(option => {
+                    option.addEventListener('click', () => this.selectTool(option.dataset.tool));
+                });
+
+                this.sensitivitySlider.addEventListener('input', (e) => {
+                    this.sensitivity = e.target.value;
+                    document.getElementById('sensitivityValue').textContent = this.sensitivity;
+                });
+
+                this.brushSizeSlider.addEventListener('input', (e) => {
+                    this.brushSize = e.target.value;
+                    document.getElementById('brushSizeValue').textContent = this.brushSize;
+                });
+
+                this.processBtn.addEventListener('click', () => this.processImage());
+                this.downloadBtn.addEventListener('click', () => this.downloadResult());
+                this.resetBtn.addEventListener('click', () => this.reset());
+
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
+                });
+
+                this.originalCanvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+                this.originalCanvas.addEventListener('mousemove', (e) => this.draw(e));
+                this.originalCanvas.addEventListener('mouseup', () => this.stopDrawing());
+                this.originalCanvas.addEventListener('mouseleave', () => this.stopDrawing());
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                this.uploadArea.style.background = '#f0f4ff';
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                this.uploadArea.style.background = '';
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.loadImage(files[0]);
+                }
+            }
+
+            handleFileSelect(e) {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    this.loadImage(files[0]);
+                }
+            }
+
+            loadImage(file) {
+                if (!file.type.startsWith('image/')) {
+                    alert('请上传图片文件');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        this.originalImage = img;
+                        this.setupCanvases(img);
+                        this.processBtn.disabled = false;
+                        this.processingInfo.style.display = 'block';
+                        this.updateImageInfo(file);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            setupCanvases(img) {
+                const maxWidth = 800;
+                const maxHeight = 600;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = (maxWidth / width) * height;
+                    width = maxWidth;
+                }
+                if (height > maxHeight) {
+                    width = (maxHeight / height) * width;
+                    height = maxHeight;
+                }
+
+                this.originalCanvas.width = width;
+                this.originalCanvas.height = height;
+                this.resultCanvas.width = width;
+                this.resultCanvas.height = height;
+
+                this.originalCtx.drawImage(img, 0, 0, width, height);
+                this.resultCtx.drawImage(img, 0, 0, width, height);
+            }
+
+            updateImageInfo(file) {
+                document.getElementById('imageSize').textContent = 
+                    `${this.originalCanvas.width} × ${this.originalCanvas.height}`;
+            }
+
+            selectTool(tool) {
+                this.currentTool = tool;
+                document.querySelectorAll('.tool-option').forEach(opt => {
+                    opt.classList.toggle('active', opt.dataset.tool === tool);
+                });
+
+                const brushGroup = document.getElementById('brushSizeGroup');
+                const instructions = document.getElementById('instructionList');
+
+                if (tool === 'manual') {
+                    brushGroup.style.display = 'block';
+                    instructions.innerHTML = `
+                        <li>在原始图片上按住鼠标左键拖动选择区域</li>
+                        <li>可以多次选择多个区域</li>
+                        <li>点击"智能处理"开始去除水印</li>
+                    `;
+                } else if (tool === 'auto') {
+                    brushGroup.style.display = 'none';
+                    instructions.innerHTML = `
+                        <li>系统会自动检测图片中的水印区域</li>
+                        <li>可以通过敏感度滑块调整检测精度</li>
+                        <li>点击"智能处理"开始</li>
+                    `;
+                } else {
+                    brushGroup.style.display = 'none';
+                    instructions.innerHTML = `
+                        <li>自动去除图片中的噪点和压缩伪影</li>
+                        <li>适用于低质量图片的修复</li>
+                        <li>点击"智能处理"开始</li>
+                    `;
+                }
+            }
+
+            startDrawing(e) {
+                if (this.currentTool !== 'manual') return;
+                this.isDrawing = true;
+                const rect = this.originalCanvas.getBoundingClientRect();
+                this.startX = e.clientX - rect.left;
+                this.startY = e.clientY - rect.top;
+            }
+
+            draw(e) {
+                if (!this.isDrawing || this.currentTool !== 'manual') return;
+                
+                const rect = this.originalCanvas.getBoundingClientRect();
+                const currentX = e.clientX - rect.left;
+                const currentY = e.clientY - rect.top;
+
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = this.originalCanvas.width;
+                tempCanvas.height = this.originalCanvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(this.originalCanvas, 0, 0);
+
+                tempCtx.strokeStyle = '#ff0000';
+                tempCtx.lineWidth = 2;
+                tempCtx.setLineDash([5, 5]);
+                tempCtx.strokeRect(this.startX, this.startY, currentX - this.startX, currentY - this.startY);
+                tempCtx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+                tempCtx.fillRect(this.startX, this.startY, currentX - this.startX, currentY - this.startY);
+
+                this.originalCtx.drawImage(tempCanvas, 0, 0);
+            }
+
+            stopDrawing() {
+                if (!this.isDrawing || this.currentTool !== 'manual') return;
+                this.isDrawing = false;
+            }
+
+            async processImage() {
+                this.updateStatus('处理中...', true);
+                const startTime = performance.now();
+
+                try {
+                    const imageData = this.originalCtx.getImageData(
+                        0, 0, this.originalCanvas.width, this.originalCanvas.height
+                    );
+
+                    let result;
+                    if (this.currentTool === 'auto') {
+                        result = await this.autoRemoveWatermark(imageData);
+                    } else if (this.currentTool === 'manual') {
+                        result = await this.manualRemoveWatermark(imageData);
+                    } else {
+                        result = await this.denoiseImage(imageData);
+                    }
+
+                    this.resultCtx.putImageData(result, 0, 0);
+                    this.processedImage = result;
+
+                    const endTime = performance.now();
+                    document.getElementById('processTime').textContent = 
+                        `${(endTime - startTime).toFixed(2)}ms`;
+                    document.getElementById('watermarkAreas').textContent = 
+                        this.currentTool === 'manual' ? `${this.manualRegions.length}个区域` : '自动检测';
+                    document.getElementById('watermarkAreas').textContent += ' ✓';
+
+                    this.updateStatus('处理完成', false);
+                    this.downloadBtn.disabled = false;
+
+                } catch (error) {
+                    console.error('处理失败:', error);
+                    this.updateStatus('处理失败: ' + error.message, false);
+                }
+            }
+
+            async autoRemoveWatermark(imageData) {
+                const data = new Uint8ClampedArray(imageData.data);
+                const width = imageData.width;
+                const height = imageData.height;
+
+                const threshold = this.sensitivity * 2.55;
+                const watermarkRegions = [];
+
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const idx = (y * width + x) * 4;
+                        const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                        
+                        if (brightness > 200 || brightness < 55) {
+                            if (this.isWatermarkPattern(data, x, y, width, height, threshold)) {
+                                watermarkRegions.push({x, y});
+                            }
+                        }
+                    }
+                }
+
+                watermarkRegions.forEach(({x, y}) => {
+                    this.inpaintRegion(data, x, y, width, height, 10);
+                });
+
+                return new ImageData(data, width, height);
+            }
+
+            isWatermarkPattern(data, x, y, width, height, threshold) {
+                const idx = (y * width + x) * 4;
+                const current = [data[idx], data[idx + 1], data[idx + 2]];
+
+                const neighbors = [
+                    [-1, 0], [1, 0], [0, -1], [0, 1]
+                ];
+
+                let similarNeighbors = 0;
+                for (const [dx, dy] of neighbors) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        const nidx = (ny * width + nx) * 4;
+                        const neighbor = [data[nidx], data[nidx + 1], data[nidx + 2]];
+                        const diff = Math.abs(current[0] - neighbor[0]) + 
+                                    Math.abs(current[1] - neighbor[1]) + 
+                                    Math.abs(current[2] - neighbor[2]);
+                        if (diff < threshold) similarNeighbors++;
+                    }
+                }
+
+                return similarNeighbors >= 2;
+            }
+
+            inpaintRegion(data, x, y, width, height, radius) {
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            const idx = (ny * width + nx) * 4;
+                            const [r, g, b] = this.getAverageColor(data, nx, ny, width, height, radius * 2);
+                            data[idx] = r;
+                            data[idx + 1] = g;
+                            data[idx + 2] = b;
+                        }
+                    }
+                }
+            }
+
+            getAverageColor(data, x, y, width, height, radius) {
+                let r = 0, g = 0, b = 0, count = 0;
+                
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            const idx = (ny * width + nx) * 4;
+                            r += data[idx];
+                            g += data[idx + 1];
+                            b += data[idx + 2];
+                            count++;
+                        }
+                    }
+                }
+
+                return [Math.round(r / count), Math.round(g / count), Math.round(b / count)];
+            }
+
+            async manualRemoveWatermark(imageData) {
+                const data = new Uint8ClampedArray(imageData.data);
+                const width = imageData.width;
+                const height = imageData.height;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(this.originalCanvas, 0, 0);
+
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(this.originalCanvas, 0, 0);
+
+                for (const region of this.manualRegions) {
+                    const {x, y, w, h} = region;
+                    this.inpaintRegion(data, Math.round(x + w/2), Math.round(y + h/2), width, height, 15);
+                }
+
+                return new ImageData(data, width, height);
+            }
+
+            async denoiseImage(imageData) {
+                const data = new Uint8ClampedArray(imageData.data);
+                const width = imageData.width;
+                const height = imageData.height;
+
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        const idx = (y * width + x) * 4;
+                        
+                        let r = 0, g = 0, b = 0;
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dx = -1; dx <= 1; dx++) {
+                                const nidx = ((y + dy) * width + (x + dx)) * 4;
+                                r += data[nidx];
+                                g += data[nidx + 1];
+                                b += data[nidx + 2];
+                            }
+                        }
+
+                        data[idx] = r / 9;
+                        data[idx + 1] = g / 9;
+                        data[idx + 2] = b / 9;
+                    }
+                }
+
+                return new ImageData(data, width, height);
+            }
+
+            updateStatus(text, isActive) {
+                document.getElementById('statusText').textContent = text;
+                document.getElementById('statusIndicator').classList.toggle('active', isActive);
+            }
+
+            switchTab(tab) {
+                document.querySelectorAll('.tab').forEach(t => {
+                    t.classList.toggle('active', t.dataset.tab === tab);
+                });
+
+                const container = document.querySelector('.canvas-container');
+                if (tab === 'original') {
+                    container.style.gridTemplateColumns = '1fr 1fr';
+                } else if (tab === 'result') {
+                    container.style.gridTemplateColumns = '1fr';
+                    this.resultCanvas.style.display = 'block';
+                    this.originalCanvas.style.display = 'none';
+                } else {
+                    container.style.gridTemplateColumns = '1fr 1fr';
+                }
+            }
+
+            downloadResult() {
+                const link = document.createElement('a');
+                link.download = 'watermark_removed.png';
+                link.href = this.resultCanvas.toDataURL('image/png');
+                link.click();
+            }
+
+            reset() {
+                this.originalImage = null;
+                this.processedImage = null;
+                this.manualRegions = [];
+                
+                this.originalCtx.clearRect(0, 0, this.originalCanvas.width, this.originalCanvas.height);
+                this.resultCtx.clearRect(0, 0, this.resultCanvas.width, this.resultCanvas.height);
+                
+                this.processBtn.disabled = true;
+                this.downloadBtn.disabled = true;
+                
+                document.getElementById('processTime').textContent = '-';
+                document.getElementById('watermarkAreas').textContent = '-';
+                this.updateStatus('准备就绪', false);
+            }
+        }
+
+        const remover = new WatermarkRemover();
+    </script>
+</body>
+</html>
