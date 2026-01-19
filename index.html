@@ -898,10 +898,33 @@
                 if (!this.isDrawing) return;
                 const coords = this.getCanvasCoords(e);
                 
+                this.drawLineOnMask(this.lastX, this.lastY, coords.x, coords.y);
                 this.drawOnMask(coords.x, coords.y);
                 
                 this.lastX = coords.x;
                 this.lastY = coords.y;
+            }
+
+            drawLineOnMask(x1, y1, x2, y2) {
+                if (!this.maskCtx) return;
+                
+                this.maskCtx.beginPath();
+                if (this.currentTool === 'brush') {
+                    this.maskCtx.globalCompositeOperation = 'source-over';
+                    this.maskCtx.strokeStyle = 'white';
+                    this.maskCtx.lineWidth = this.brushSize;
+                    this.maskCtx.lineCap = 'round';
+                    this.maskCtx.lineJoin = 'round';
+                } else {
+                    this.maskCtx.globalCompositeOperation = 'destination-out';
+                    this.maskCtx.lineWidth = this.brushSize;
+                    this.maskCtx.lineCap = 'round';
+                    this.maskCtx.lineJoin = 'round';
+                }
+                
+                this.maskCtx.moveTo(x1, y1);
+                this.maskCtx.lineTo(x2, y2);
+                this.maskCtx.stroke();
             }
 
             drawOnMask(x, y) {
@@ -911,7 +934,6 @@
                 if (this.currentTool === 'brush') {
                     this.maskCtx.globalCompositeOperation = 'source-over';
                     this.maskCtx.fillStyle = 'white';
-                    this.maskCtx.strokeStyle = 'white';
                 } else {
                     this.maskCtx.globalCompositeOperation = 'destination-out';
                 }
@@ -919,12 +941,14 @@
                 this.maskCtx.arc(x, y, this.brushSize / 2, 0, Math.PI * 2);
                 this.maskCtx.fill();
                 
-                this.updateSelectedCount();
                 this.updatePreview();
             }
 
             stopDrawing() {
-                this.isDrawing = false;
+                if (this.isDrawing) {
+                    this.isDrawing = false;
+                    this.updateSelectedCount();
+                }
             }
 
             updateSelectedCount() {
@@ -939,10 +963,19 @@
             }
 
             updatePreview() {
-                if (!this.maskCtx || !this.originalCtx) return;
-                this.originalCtx.drawImage(this.originalImage, 0, 0, this.originalCanvas.width, this.originalCanvas.height);
-                this.originalCtx.globalAlpha = 0.3;
-                this.originalCtx.drawImage(this.maskCanvas, 0, 0);
+                if (!this.maskCtx || !this.originalCtx || !this.originalImage) return;
+                
+                const scale = this.brushSize * 2;
+                const x = Math.max(0, Math.floor(this.lastX - scale));
+                const y = Math.max(0, Math.floor(this.lastY - scale));
+                const w = Math.min(this.originalCanvas.width - x, scale * 2);
+                const h = Math.min(this.originalCanvas.height - y, scale * 2);
+                
+                if (w <= 0 || h <= 0) return;
+                
+                this.originalCtx.drawImage(this.originalImage, x, y, w, h, x, y, w, h);
+                this.originalCtx.globalAlpha = 0.4;
+                this.originalCtx.drawImage(this.maskCanvas, x, y, w, h, x, y, w, h);
                 this.originalCtx.globalAlpha = 1;
             }
 
