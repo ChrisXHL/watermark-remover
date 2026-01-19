@@ -1,0 +1,13 @@
+{
+  "name": "watermark-remover",
+  "version": "1.0.0",
+  "description": "智能去水印网页工具",
+  "scripts": {
+    "dev": "npx serve .",
+    "deploy:vercel": "npx vercel --prod",
+    "deploy:netlify": "npx netlify deploy --dir=. --prod"
+  },
+  "keywords": ["watermark", "image-processing", "web-tool"],
+  "author": "",
+  "license": "MIT"
+}
