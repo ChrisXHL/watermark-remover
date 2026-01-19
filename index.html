@@ -966,17 +966,9 @@
             updatePreview() {
                 if (!this.maskCtx || !this.originalCtx || !this.originalImage) return;
                 
-                const scale = this.brushSize * 2;
-                const x = Math.max(0, Math.floor(this.lastX - scale));
-                const y = Math.max(0, Math.floor(this.lastY - scale));
-                const w = Math.min(this.originalCanvas.width - x, scale * 2);
-                const h = Math.min(this.originalCanvas.height - y, scale * 2);
-                
-                if (w <= 0 || h <= 0) return;
-                
-                this.originalCtx.drawImage(this.originalImage, x, y, w, h, x, y, w, h);
+                this.originalCtx.drawImage(this.originalImage, 0, 0, this.originalCanvas.width, this.originalCanvas.height);
                 this.originalCtx.globalAlpha = 0.4;
-                this.originalCtx.drawImage(this.maskCanvas, x, y, w, h, x, y, w, h);
+                this.originalCtx.drawImage(this.maskCanvas, 0, 0);
                 this.originalCtx.globalAlpha = 1;
             }
 
